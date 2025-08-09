@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gong Line Emoji Trader</title>
+    <style>
+      :root{
+        --bg0: #000000;
+        --bg1: #0a0f0a;
+        --glass: rgba(0,255,135,0.07);
+        --glass-strong: rgba(0,255,135,0.14);
+        --text: #d8ffe8;
+        --muted: #8fd9b4;
+        --accent: #00ff88;
+        --accent-2: #00e676;
+        --danger: #ff4d6d;
+        --success: #00ff88;
+        --warning: #fbbf24;
+        --btn: #0c120c;
+        --btn-hi: #101b10;
+        --shadow: 0 12px 36px rgba(0,0,0,0.6);
+        --radius: 14px;
+        --radius-sm: 10px;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(1200px 800px at 10% 10%, #061b10 0%, var(--bg0) 60%),
+                    radial-gradient(900px 700px at 90% 20%, #041a0f 0%, var(--bg1) 60%),
+                    repeating-linear-gradient(90deg, rgba(0,255,136,0.04) 0, rgba(0,255,136,0.04) 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 16px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .card {
+        background: linear-gradient(180deg, rgba(0,255,135,0.06), rgba(0,255,135,0.03));
+        border: 1px solid rgba(0,255,135,0.2);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+        padding: 14px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      @media (min-width: 900px) {
+        .row { grid-template-columns: 1.2fr 1fr; }
+      }
+      .title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+      .subtle { color: var(--muted); font-weight: 600; }
+      .stations {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0,1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .station-btn {
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(0,255,135,0.4);
+        background: linear-gradient(180deg, rgba(4,30,18,0.7), rgba(3,20,12,0.6));
+        color: var(--text);
+        padding: 10px 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.06s ease, background 0.12s ease, border-color 0.12s ease;
+      }
+      .station-btn:hover { transform: translateY(-1px); }
+      .station-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,255,136,0.2) inset; }
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 10px;
+      }
+      .stat {
+        background: var(--glass);
+        border: 1px solid rgba(0,255,135,0.2);
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-height: 70px;
+      }
+      .stat .label { color: var(--muted); font-size: 12px; font-weight: 600; }
+      .stat .value { font-size: 18px; font-weight: 800; }
+
+      .timer-wrap { position: relative; height: 12px; background: rgba(0,255,135,0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(0,255,135,0.25); }
+      .timer-bar { position: absolute; top:0; left:0; bottom:0; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+      .timer-text { font-weight: 800; }
+
+      .market-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+      .mute-toggle { cursor: pointer; border-radius: 999px; background: var(--glass); border: 1px solid rgba(0,255,135,0.25); padding: 8px 12px; font-weight: 700; }
+
+      .market-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 12px;
+      }
+      @media (min-width: 900px) {
+        .market-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+      }
+      .good-card {
+        background: linear-gradient(180deg, rgba(0,255,135,0.06), rgba(0,255,135,0.03));
+        border: 1px solid rgba(0,255,135,0.2);
+        border-radius: var(--radius);
+        padding: 12px;
+        display: grid;
+        grid-template-rows: auto auto auto auto;
+        gap: 8px;
+      }
+      .good-card.unavail { opacity: 0.45; filter: grayscale(0.6); }
+      .good-emoji { font-size: 36px; line-height: 1; }
+      .good-price { font-weight: 900; font-size: 18px; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(0,255,136,0.15);
+        color: var(--text);
+        border: 1px solid rgba(0,255,136,0.35);
+        padding: 4px 8px; border-radius: 999px; font-weight: 700; font-size: 12px;
+      }
+      .you-have { color: var(--muted); font-weight: 700; }
+      .btn-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+      .btn {
+        background: linear-gradient(180deg, var(--btn-hi), var(--btn));
+        border: 1px solid rgba(0,255,135,0.35);
+        color: white; border-radius: 10px; padding: 8px 6px; cursor: pointer;
+        font-weight: 800; font-size: 12px; letter-spacing: .2px;
+        transition: transform 0.06s ease, filter 0.1s ease, border-color 0.12s ease;
+      }
+      .btn:hover { transform: translateY(-1px); }
+      .btn.buy { border-color: rgba(0,255,135,0.7); }
+      .btn.sell { border-color: rgba(255,77,109,0.6); }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .overlay {
+        position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.8); z-index: 50; padding: 20px;
+      }
+      .overlay.show { display: flex; }
+      .modal {
+        width: 100%; max-width: 520px; border-radius: 16px; padding: 16px;
+        background: linear-gradient(180deg, rgba(0,255,135,0.08), rgba(0,255,135,0.04));
+        border: 1px solid rgba(0,255,135,0.25); box-shadow: var(--shadow);
+      }
+      .modal h2 { margin: 0 0 10px 0; font-size: 22px; }
+      .modal p { margin: 0 0 10px 0; color: var(--muted); font-weight: 600; }
+      .modal .actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 10px; }
+      .modal .actions.single { grid-template-columns: 1fr; }
+      .modal .actions.triple { grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+      .station-choices { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 12px; }
+
+      .penalty-float { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3); padding: 12px 16px; border-radius: 999px;
+        font-weight: 900; font-size: 18px; pointer-events: none; opacity: 0; z-index: 60;
+        animation: pfade 900ms ease forwards;
+      }
+      @keyframes pfade { 0%{ opacity: 0; transform: translate(-50%,-50%) scale(0.9);} 20%{opacity:1; transform: translate(-50%,-50%) scale(1);} 80%{opacity:1;} 100%{ opacity:0; transform: translate(-50%,-50%) scale(1.05);} }
+
+      /* Fade overlay between days */
+      #fadeOverlay { position: fixed; inset: 0; background: black; opacity: 0; pointer-events: none; z-index: 70; transition: opacity 220ms ease; }
+      #fadeOverlay.show { opacity: 0.7; }
+
+      /* Big penalty flash */
+      .big-penalty { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 80; pointer-events: none; }
+      .big-penalty .text { font-size: clamp(42px, 12vw, 120px); font-weight: 900; color: #ff4d6d; opacity: 0; text-shadow: 0 6px 24px rgba(0,0,0,0.6); animation: bigpen 850ms ease forwards; }
+      @keyframes bigpen { 0%{ opacity:0; transform: scale(0.9);} 20%{opacity:1; transform: scale(1);} 80%{opacity:1;} 100%{opacity:0; transform: scale(1.04);} }
+
+      
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <div class="title">Gong Line Emoji Trader</div>
+        <div class="subtle">Trade emoji goods between stations before the gong!</div>
+        <div style="height:8px"></div>
+        <div id="dayLabel" class="subtle" style="font-weight:800">Day 1 / 30</div>
+        <div style="height:8px"></div>
+        <div class="stats">
+          <div class="stat"><div class="label">Station</div><div id="stationName" class="value">Wollongong</div></div>
+          <div class="stat"><div class="label">Cash</div><div id="cashValue" class="value">$0</div></div>
+          <div class="stat"><div class="label">Health</div><div id="healthValue" class="value">♥ 100</div></div>
+          <div class="stat">
+            <div class="label">Timer</div>
+            <div class="timer-wrap">
+              <div id="timerBar" class="timer-bar"></div>
+            </div>
+            <div class="timer-text" id="timerText">15s</div>
+          </div>
+          <div class="stat"><div class="label">Bag</div><div id="bagValue" class="value">0 / 50</div></div>
+        </div>
+        <div style="height:10px"></div>
+        <div class="stations" id="stationButtons"></div>
+      </div>
+
+      <div class="card">
+        <div class="market-title">
+          <div class="title" id="marketTitle">Market — Wollongong</div>
+          <button id="muteBtn" class="mute-toggle" aria-pressed="false">🔊 Sound</button>
+        </div>
+        <div class="market-grid" id="marketGrid"></div>
+      </div>
+    </div>
+
+    <!-- Overlays -->
+    <div class="overlay" id="startOverlay">
+      <div class="modal">
+        <h2>Start Journey</h2>
+        <p>Trade fast across 4 stations. Each day is only 15 seconds — buy low, sell high.</p>
+        <div class="actions single">
+          <button class="btn" id="startBtn">Start</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="eventOverlay">
+      <div class="modal">
+        <h2 id="eventTitle">Event</h2>
+        <p id="eventBody">...</p>
+        <div id="eventActions" class="actions"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="chooseOverlay">
+      <div class="modal">
+        <h2>Choose Next Station</h2>
+        <p>Day over. Where to next?</p>
+        <div id="stationChoices" class="station-choices"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="endOverlay">
+      <div class="modal">
+        <h2>Trip Complete</h2>
+        <p id="endSummary">You finished with $0.</p>
+        <div class="actions single">
+          <button class="btn" id="restartBtn">Restart</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="fadeOverlay"></div>
+
+    
+
+    <script>
+      // --- Constants ---
+      const STATIONS = ["Wollongong","Fairy Meadow","Towradgi","Bellambi"];
+      const EMOJIS = ["💊","🍄","🚬","🔵","💉","🌀","💨","❄️","🐎"];
+      const MAX_DAYS = 30;
+      const STOP_SECONDS = 15;
+      const START_CASH = 500;
+      const INVENTORY_CAP = 50;
+      const START_HEALTH = 100;
+      // Debug/testing toggles
+      const DEBUG_FORCE_GRAB = false; // Quick Grab debug disabled
+
+      const LS_KEY = 'gong_line_highscore_v1';
+
+      // --- Deterministic RNG helpers ---
+      function xmur3(str) {
+        let h = 1779033703 ^ str.length;
+        for (let i = 0; i < str.length; i++) {
+          h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+          h = (h << 13) | (h >>> 19);
+        }
+        return function() {
+          h = Math.imul(h ^ (h >>> 16), 2246822507);
+          h = Math.imul(h ^ (h >>> 13), 3266489909);
+          h ^= h >>> 16;
+          return h >>> 0;
+        };
+      }
+      function mulberry32(a) {
+        return function() {
+          let t = a += 0x6D2B79F5;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        }
+      }
+      function seededRandom(seedStr) {
+        const seedFn = xmur3(seedStr);
+        const r = mulberry32(seedFn());
+        return r;
+      }
+
+      // --- Audio ---
+      const AudioKit = (() => {
+        let audioCtx = null;
+        let muted = false;
+        let musicInterval = null;
+        let musicStep = 0;
+        function ensureCtx(){ if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
+        function setMuted(m){ muted = m; }
+        function blip(freq=880, dur=0.08, type='sine', gain=0.04){
+          if(muted) return;
+          ensureCtx();
+          const t0 = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.frequency.value = freq;
+          osc.type = type;
+          g.gain.setValueAtTime(gain, t0);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          osc.connect(g); g.connect(audioCtx.destination);
+          osc.start(); osc.stop(t0 + dur);
+        }
+        function burst(freqs=[1000,1200,1400], dur=0.08, type='square', startGain=0.12){
+          if(muted) return;
+          ensureCtx();
+          const t0 = audioCtx.currentTime;
+          freqs.forEach((f,i)=>{
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.frequency.value = f;
+            osc.type = type;
+            const t = t0 + i*0.06;
+            g.gain.setValueAtTime(startGain, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            osc.connect(g); g.connect(audioCtx.destination);
+            osc.start(t); osc.stop(t + dur);
+          })
+        }
+        function chord(freqs=[440,660], dur=0.25, type='sine', gain=0.03){
+          if(muted) return;
+          ensureCtx();
+          const t0 = audioCtx.currentTime;
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(gain, t0);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          g.connect(audioCtx.destination);
+          const oscs = freqs.map(f=>{
+            const o = audioCtx.createOscillator(); o.type = type; o.frequency.value = f; o.connect(g); o.start(); o.stop(t0+dur); return o;
+          });
+        }
+        function startMusic(){
+          if(muted) return;
+          ensureCtx();
+          stopMusic();
+          musicStep = 0;
+          // 8-bit square arpeggio @ ~120 BPM (step = 250ms)
+          const scale = [261.63, 311.13, 392.00, 523.25]; // C minor feel
+          musicInterval = setInterval(()=>{
+            const base = scale[musicStep % scale.length];
+            blip(base, 0.08, 'square', 0.03);
+            if (musicStep % 2 === 0) blip(base*2, 0.06, 'square', 0.02);
+            musicStep++;
+          }, 250);
+        }
+        function stopMusic(){ if (musicInterval){ clearInterval(musicInterval); musicInterval = null; } }
+        function alarmTed(){
+          if(muted) return;
+          ensureCtx();
+          // loud multi-tone burst
+          burst([1200, 1500, 1000, 1800], 0.1, 'square', 0.18);
+        }
+        function sirenCops(){
+          if(muted) return;
+          ensureCtx();
+          // louder alternating siren
+          burst([600, 450, 600, 450, 700], 0.12, 'sawtooth', 0.16);
+        }
+        function sadDarcy(){
+          if(muted) return;
+          ensureCtx();
+          // louder descending
+          burst([420, 330, 260], 0.12, 'triangle', 0.14);
+        }
+        return { blip, chord, setMuted, startMusic, stopMusic, alarmTed, sirenCops, sadDarcy };
+      })();
+
+      // --- State ---
+      const state = {
+        day: 1,
+        station: STATIONS[0],
+        cash: START_CASH,
+        health: START_HEALTH,
+        inv: Object.fromEntries(EMOJIS.map(e=>[e,0])),
+        prices: Object.fromEntries(EMOJIS.map(e=>[e,0])),
+        timer: STOP_SECONDS,
+        lastBuyPrice: Object.fromEntries(EMOJIS.map(e=>[e,null])),
+        canTrade: true,
+        highScore: 0,
+        timerInterval: null,
+        eventToday: null, // 'ted' | 'darcy' | 'cops'
+        eventResolved: false,
+        started: false,
+        inventoryCap: INVENTORY_CAP,
+      };
+
+      // --- DOM ---
+      const el = {
+        startOverlay: document.getElementById('startOverlay'),
+        startBtn: document.getElementById('startBtn'),
+        stationButtons: document.getElementById('stationButtons'),
+        dayLabel: document.getElementById('dayLabel'),
+        stationName: document.getElementById('stationName'),
+        cashValue: document.getElementById('cashValue'),
+        healthValue: document.getElementById('healthValue'),
+        bagValue: document.getElementById('bagValue'),
+        timerBar: document.getElementById('timerBar'),
+        timerText: document.getElementById('timerText'),
+        marketTitle: document.getElementById('marketTitle'),
+        marketGrid: document.getElementById('marketGrid'),
+        muteBtn: document.getElementById('muteBtn'),
+        eventOverlay: document.getElementById('eventOverlay'),
+        eventTitle: document.getElementById('eventTitle'),
+        eventBody: document.getElementById('eventBody'),
+        eventActions: document.getElementById('eventActions'),
+        chooseOverlay: document.getElementById('chooseOverlay'),
+        stationChoices: document.getElementById('stationChoices'),
+        endOverlay: document.getElementById('endOverlay'),
+        endSummary: document.getElementById('endSummary'),
+        restartBtn: document.getElementById('restartBtn'),
+        fadeOverlay: document.getElementById('fadeOverlay'),
+      };
+
+      // --- Helpers ---
+      function formatMoney(n){
+        const s = Math.round(n).toLocaleString('en-AU');
+        return `$${s}`;
+      }
+      function totalInv(){ return EMOJIS.reduce((a,e)=>a+state.inv[e],0); }
+      function hasOpenOverlay(){
+        return el.eventOverlay.classList.contains('show')
+          || el.chooseOverlay.classList.contains('show')
+          || el.endOverlay.classList.contains('show');
+      }
+      function showPenalty(text, color='white'){
+        const d = document.createElement('div');
+        d.className = 'penalty-float';
+        d.textContent = text;
+        d.style.color = color;
+        document.body.appendChild(d);
+        setTimeout(()=>d.remove(), 950);
+      }
+
+      // --- Prices ---
+      function generatePriceFor(emoji){
+        const idx = EMOJIS.indexOf(emoji);
+        const base = 10 + idx*3;
+        const r = seededRandom(`price:${state.day}|${state.station}|${emoji}`);
+        const roll = r();
+        let mult;
+        if (roll < 0.08){ // crash slightly more frequent
+          mult = 0.30 + r() * (0.55 - 0.30); // 0.30–0.55
+        } else if (roll < 0.16){ // spike slightly more frequent
+          mult = 2.0 + r() * (3.5 - 2.0); // 2.0–3.5
+        } else {
+          // wider normal variance 0.7–1.35
+          mult = 0.70 + r() * (1.35 - 0.70);
+        }
+        return Math.max(1, Math.round(base * mult));
+      }
+      function stationFeaturedMap(){
+        // Each station has 5 featured goods available for sure
+        const idxByEmoji = Object.fromEntries(EMOJIS.map((e,i)=>[e,i]));
+        const sets = {
+          'Wollongong': [0,1,2,3,4],
+          'Fairy Meadow': [1,2,3,5,7],
+          'Towradgi': [0,2,4,6,8],
+          'Bellambi': [0,3,4,7,8],
+        };
+        return { map: sets, idxByEmoji };
+      }
+      function generateAllPrices(){
+        const { map } = stationFeaturedMap();
+        const featured = new Set(map[state.station].map(i=>EMOJIS[i]));
+        const rand = seededRandom(`avail:${state.day}|${state.station}`);
+        // choose 1–2 untradeable from non-featured
+        const nonFeatured = EMOJIS.filter(e=>!featured.has(e));
+        const shuffle = [...nonFeatured].sort(()=>rand()-0.5);
+        const numBlock = 1 + Math.floor(rand()*2); // 1–2
+        const blockedSet = new Set(shuffle.slice(0, numBlock));
+        for(const e of EMOJIS){
+          state.prices[e] = generatePriceFor(e);
+          if (blockedSet.has(e)) state.prices[e] = null;
+        }
+      }
+
+      // --- Events ---
+      function determineEvent(){
+        const r = seededRandom(`event:${state.day}|${state.station}`);
+        const roll = r();
+        let evt = null;
+        if (state.day <= 3) {
+          evt = null; // no popups first 3 days
+        } else if (state.day === 15) {
+          evt = 'cargo'; // cargo pants offer
+        } else if (DEBUG_FORCE_GRAB) {
+          evt = null;
+        } else if (roll < 0.30) evt = 'ted';
+        else if (roll < 0.35) evt = 'darcy';
+        else if (roll < 0.45) evt = 'cops';
+        // quick grab removed
+        // otherwise, no event today
+        state.eventToday = evt;
+        state.eventResolved = evt ? false : true;
+      }
+
+      function showEventPopup(){
+        if (!state.eventToday) return;
+        if (state.eventResolved) return;
+        const evt = state.eventToday;
+        el.eventActions.innerHTML = '';
+        el.eventActions.classList.remove('single','triple');
+        // fade background and play loud alert
+        el.fadeOverlay.classList.add('show');
+        setTimeout(()=>{ el.fadeOverlay.classList.remove('show'); }, 300);
+        // quick grab removed
+        if (evt === 'ted'){
+          el.eventTitle.textContent = 'TED IS CALLING — Answer?';
+          el.eventBody.textContent = 'Your phone buzzes. It\'s Ted.';
+          AudioKit.alarmTed();
+          const yes = document.createElement('button');
+          yes.className = 'btn';
+          yes.textContent = 'Yes';
+          yes.onclick = ()=>{
+            // random penalty between 50 and 100
+            const r = seededRandom(`ted:${state.day}|${state.station}`);
+            const dmg = Math.floor(50 + r()*51); // 50..100
+            state.cash = state.cash - dmg; // allow negative cash
+            const big = document.createElement('div');
+            big.className = 'big-penalty';
+            big.innerHTML = `<div class="text">–$${dmg}</div>`;
+            document.body.appendChild(big);
+            setTimeout(()=>big.remove(), 900);
+            AudioKit.blip(300, 0.14, 'sawtooth', 0.06);
+            state.eventResolved = true; hideEventPopup(); renderAll();
+          };
+          const no = document.createElement('button');
+          no.className = 'btn';
+          no.textContent = 'No';
+          no.onclick = ()=>{
+            // minus 3 seconds from timer
+            state.timer = Math.max(0, state.timer - 3);
+            renderTimer();
+            state.eventResolved = true; hideEventPopup();
+          };
+          el.eventActions.append(yes, no);
+        } else if (evt === 'darcy'){
+          el.eventTitle.textContent = 'DARCY STRIKES';
+          el.eventBody.textContent = 'Darcy flushes half your stash.';
+          AudioKit.sadDarcy();
+          const ok = document.createElement('button');
+          ok.className = 'btn';
+          ok.textContent = 'OK';
+          ok.onclick = ()=>{
+            let removed = 0;
+            for(const e of EMOJIS){
+              const drop = Math.floor(state.inv[e] * 0.5);
+              state.inv[e] -= drop; removed += drop;
+              if (state.inv[e] === 0) state.lastBuyPrice[e] = null;
+            }
+            if (removed>0) showPenalty(`–${removed} items`, '#fca5a5');
+            AudioKit.blip(220, 0.18, 'triangle', 0.06);
+            state.eventResolved = true; hideEventPopup(); renderAll();
+          };
+          el.eventActions.classList.add('single');
+          el.eventActions.append(ok);
+        } else if (evt === 'cops'){
+          el.eventTitle.textContent = 'COPS CHECK YOUR BAG — Run or Fight?';
+          el.eventBody.textContent = 'Two officers flag you down.';
+          AudioKit.sirenCops();
+          const run = document.createElement('button');
+          run.className = 'btn';
+          run.textContent = 'Run';
+          run.onclick = ()=>{
+            const r = seededRandom(`cops:run:${state.day}|${state.station}`);
+            const percent = 0.20 + r() * (0.40 - 0.20);
+            let removed = 0;
+            for(const e of EMOJIS){
+              const drop = Math.floor(state.inv[e] * percent);
+              state.inv[e] -= drop; removed += drop;
+              if (state.inv[e] === 0) state.lastBuyPrice[e] = null;
+            }
+            if (removed>0) showPenalty(`–${removed} items`, '#fca5a5');
+            AudioKit.blip(500, 0.1, 'square', 0.05);
+            state.eventResolved = true; hideEventPopup(); renderAll();
+          };
+          const fight = document.createElement('button');
+          fight.className = 'btn';
+          fight.textContent = 'Fight';
+          fight.onclick = ()=>{
+            const r = seededRandom(`cops:fight:${state.day}|${state.station}`);
+            const dmg = Math.floor(10 + r() * (25 - 10));
+            state.health = Math.max(0, state.health - dmg);
+            showPenalty(`–${dmg} ♥`, '#fca5a5');
+            AudioKit.blip(160, 0.12, 'square', 0.05);
+            state.eventResolved = true; hideEventPopup(); renderAll();
+          };
+          el.eventActions.append(run, fight);
+        } else if (evt === 'cargo'){
+          el.eventTitle.textContent = 'A MAN OFFERS CARGO PANTS';
+          el.eventBody.textContent = 'Extra pockets for your goods. Buy for $200? (+50 capacity)';
+          const yes = document.createElement('button'); yes.className='btn'; yes.textContent = 'Buy $200';
+          yes.onclick = ()=>{
+            if (state.cash >= 200) {
+              state.cash -= 200;
+              state.inventoryCap += 50;
+              showPenalty('+50 bag', '#00ff88');
+              state.eventResolved = true; hideEventPopup(); renderAll();
+            } else {
+              // not enough: man punches you
+              const r = seededRandom(`cargo:punch:${state.day}|${state.station}`);
+              const dmg = Math.floor(8 + r() * (18 - 8));
+              state.health = Math.max(0, state.health - dmg);
+              el.eventTitle.textContent = 'You don\'t have enough money, bozo.';
+              el.eventBody.textContent = `He punches you (–${dmg} health).`;
+              AudioKit.blip(160, 0.12, 'square', 0.07);
+              // keep popup, replace actions with OK
+              el.eventActions.innerHTML = '';
+              const ok = document.createElement('button'); ok.className='btn'; ok.textContent = 'OK';
+              ok.onclick = ()=>{ state.eventResolved = true; hideEventPopup(); renderAll(); };
+              el.eventActions.append(ok);
+            }
+          };
+          const no = document.createElement('button'); no.className='btn'; no.textContent = 'No thanks';
+          no.onclick = ()=>{ state.eventResolved = true; hideEventPopup(); };
+          el.eventActions.append(yes, no);
+        }
+        el.eventOverlay.classList.add('show');
+      }
+      function hideEventPopup(){ el.eventOverlay.classList.remove('show'); }
+
+      // quick grab removed
+
+      // --- Choose Station ---
+      function showChooseOverlay(){
+        el.stationChoices.innerHTML = '';
+        for(const s of STATIONS){
+          const b = document.createElement('button');
+          b.className = 'btn';
+          b.textContent = s;
+          b.onclick = ()=>{ advanceDayTo(s); };
+          el.stationChoices.appendChild(b);
+        }
+        el.chooseOverlay.classList.add('show');
+      }
+      function hideChooseOverlay(){ el.chooseOverlay.classList.remove('show'); }
+
+      // --- Timer ---
+      function startTimer(){
+        stopTimer();
+        state.timer = STOP_SECONDS;
+        const startTime = performance.now();
+        function tick(){
+          const elapsed = (performance.now() - startTime) / 1000;
+          const remaining = Math.max(0, STOP_SECONDS - elapsed);
+          state.timer = remaining;
+          renderTimer();
+          if (remaining <= 0){
+            stopTimer();
+            state.canTrade = false;
+            // If event overlay is open, replace it with choose overlay to avoid stacking
+            if (el.eventOverlay.classList.contains('show')) hideEventPopup();
+            showChooseOverlay();
+          }
+          // ticking sound at each second boundary
+          const whole = Math.ceil(remaining);
+          if (remaining > 0 && Math.abs(whole - remaining) < 0.1) {
+            AudioKit.blip(900, 0.03, 'square', 0.02);
+          }
+        }
+        state.timerInterval = setInterval(tick, 100);
+      }
+      function stopTimer(){ if (state.timerInterval){ clearInterval(state.timerInterval); state.timerInterval = null; } }
+
+      // --- Trading ---
+      function guardTrade(){ return state.canTrade && state.timer > 0 && !hasOpenOverlay(); }
+      function buy(emoji, qty){
+        if (!guardTrade()) return;
+        const price = state.prices[emoji];
+        const affordable = Math.floor(state.cash / price);
+        const remainingCap = Math.max(0, state.inventoryCap - totalInv());
+        const actual = Math.min(qty, affordable, remainingCap);
+        if (actual <= 0) return;
+        state.cash -= price * actual;
+        const wasZero = state.inv[emoji] === 0;
+        state.inv[emoji] += actual;
+        if (wasZero) state.lastBuyPrice[emoji] = price;
+        AudioKit.blip(900, 0.07, 'sine', 0.04);
+        renderAll();
+      }
+      function sell(emoji, qty){
+        if (!guardTrade()) return;
+        const have = state.inv[emoji];
+        if (have <= 0) return;
+        const actual = Math.min(qty, have);
+        const price = state.prices[emoji];
+        state.inv[emoji] -= actual;
+        state.cash += price * actual;
+        if (state.inv[emoji] === 0) state.lastBuyPrice[emoji] = null;
+        AudioKit.blip(500, 0.07, 'sine', 0.04);
+        renderAll();
+      }
+      function sellAll(emoji){
+        sell(emoji, state.inv[emoji]);
+      }
+
+      // --- Rendering ---
+      function renderStations(){
+        el.stationButtons.innerHTML = '';
+        for(const s of STATIONS){
+          const b = document.createElement('button');
+          b.className = 'station-btn' + (s === state.station ? ' active' : '');
+          b.textContent = s;
+          b.onclick = ()=>{
+            // Clicking a station ends the day & advances
+            if (hasOpenOverlay()) return; // already choosing or in event/end
+            if (state.day > MAX_DAYS) return;
+            stopTimer(); state.canTrade = false; hideEventPopup();
+            advanceDayTo(s);
+          };
+          el.stationButtons.appendChild(b);
+        }
+      }
+      function renderHeader(){
+        el.dayLabel.textContent = `Day ${state.day} / ${MAX_DAYS}`;
+        el.stationName.textContent = state.station;
+        el.cashValue.textContent = formatMoney(state.cash);
+        el.healthValue.textContent = `♥ ${state.health}`;
+        el.marketTitle.textContent = `Market — ${state.station}`;
+        el.bagValue.textContent = `${totalInv()} / ${state.inventoryCap}`;
+      }
+      function renderTimer(){
+        const pct = Math.max(0, Math.min(1, state.timer / STOP_SECONDS));
+        el.timerBar.style.width = `${pct*100}%`;
+        el.timerText.textContent = `${Math.ceil(state.timer)}s`;
+      }
+      function renderMarket(){
+        el.marketGrid.innerHTML = '';
+        for(const e of EMOJIS){
+          const card = document.createElement('div');
+          card.className = 'good-card';
+          const price = state.prices[e];
+          const have = state.inv[e];
+          const lbp = state.lastBuyPrice[e];
+          const row1 = document.createElement('div');
+          row1.style.display = 'flex'; row1.style.alignItems = 'center'; row1.style.justifyContent = 'space-between';
+          const emojiEl = document.createElement('div'); emojiEl.className = 'good-emoji'; emojiEl.textContent = e;
+          const priceEl = document.createElement('div'); priceEl.className = 'good-price'; priceEl.textContent = price==null ? '—' : formatMoney(price);
+          row1.append(emojiEl, priceEl);
+
+          const chipRow = document.createElement('div');
+          if (have > 0 && lbp != null){
+            const chip = document.createElement('div'); chip.className = 'chip'; chip.textContent = `Bought @ ${formatMoney(lbp)}`; chipRow.appendChild(chip);
+          } else { chipRow.style.minHeight = '22px'; }
+
+          const haveRow = document.createElement('div'); haveRow.className = 'you-have'; haveRow.textContent = `You have: ${have}`;
+
+          const btns = document.createElement('div'); btns.className = 'btn-row';
+          const b1 = document.createElement('button'); b1.className = 'btn buy'; b1.textContent = 'Buy 1'; b1.onclick = ()=>buy(e,1);
+          const b5 = document.createElement('button'); b5.className = 'btn buy'; b5.textContent = 'Buy 5'; b5.onclick = ()=>buy(e,5);
+          const s1 = document.createElement('button'); s1.className = 'btn sell'; s1.textContent = 'Sell 1'; s1.onclick = ()=>sell(e,1);
+          const sa = document.createElement('button'); sa.className = 'btn sell'; sa.textContent = 'Sell All'; sa.onclick = ()=>sellAll(e);
+
+          // Disable when cannot trade; Buy disabled if not available; Sell only if have
+          const disabled = !guardTrade();
+          b1.disabled = b5.disabled = disabled || price==null;
+          s1.disabled = sa.disabled = disabled || have<=0;
+
+          if (price==null) card.classList.add('unavail');
+
+          btns.append(b1,b5,s1,sa);
+          card.append(row1, chipRow, haveRow, btns);
+          el.marketGrid.appendChild(card);
+        }
+      }
+      function renderAll(){
+        renderStations();
+        renderHeader();
+        renderTimer();
+        generateAllPrices();
+        renderMarket();
+      }
+
+      // --- Day lifecycle ---
+      function startDay(){
+        state.canTrade = true;
+        generateAllPrices();
+        if (state.day === 1) {
+          state.eventToday = null;
+          state.eventResolved = true;
+        } else {
+          determineEvent();
+        }
+        renderAll();
+        // Start timer immediately; it continues running during popup
+        startTimer();
+        // Only show popup if an event actually occurred
+        if (state.eventToday) showEventPopup();
+        // Day start sound
+        AudioKit.chord([420, 560, 720], 0.25, 'sine', 0.04);
+      }
+      function fadeBetweenDays(cb){
+        el.fadeOverlay.classList.add('show');
+        setTimeout(()=>{ cb(); el.fadeOverlay.classList.remove('show'); }, 220);
+      }
+      function advanceDayTo(newStation){
+        hideChooseOverlay(); hideEventPopup();
+        fadeBetweenDays(()=>{
+          state.day += 1;
+          state.station = newStation;
+          if (state.day > MAX_DAYS){
+            endGame();
+            return;
+          }
+          startDay();
+        });
+      }
+
+      function endGame(){
+        stopTimer();
+        state.canTrade = false;
+        const totalCash = state.cash;
+        const hs = Number(localStorage.getItem(LS_KEY) || '0');
+        let updated = hs;
+        if (totalCash > hs){ updated = totalCash; localStorage.setItem(LS_KEY, String(updated)); }
+        el.endSummary.textContent = `Final cash: ${formatMoney(totalCash)}  •  High score: ${formatMoney(updated)}`;
+        el.endOverlay.classList.add('show');
+      }
+
+      function resetGame(){
+        stopTimer();
+        state.day = 1;
+        state.station = STATIONS[0];
+        state.cash = START_CASH;
+        state.health = START_HEALTH;
+        for(const e of EMOJIS){ state.inv[e]=0; state.lastBuyPrice[e]=null; }
+        state.canTrade = true;
+        state.inventoryCap = INVENTORY_CAP;
+        state.eventToday = null; state.eventResolved = false;
+        hideChooseOverlay(); hideEventPopup(); el.endOverlay.classList.remove('show');
+        startDay();
+      }
+
+      // --- Init ---
+      function init(){
+        try{ state.highScore = Number(localStorage.getItem(LS_KEY) || '0'); }catch{ state.highScore = 0; }
+        el.muteBtn.addEventListener('click', ()=>{
+          const pressed = el.muteBtn.getAttribute('aria-pressed') === 'true';
+          const next = !pressed;
+          el.muteBtn.setAttribute('aria-pressed', String(next));
+          el.muteBtn.textContent = next ? '🔇 Muted' : '🔊 Sound';
+          AudioKit.setMuted(next);
+          if (!next) { AudioKit.startMusic(); } else { AudioKit.stopMusic(); }
+        });
+        el.restartBtn.addEventListener('click', resetGame);
+        // Start background music on first user gesture (autoplay-safe)
+        const onceStartMusic = ()=>{ AudioKit.startMusic(); window.removeEventListener('pointerdown', onceStartMusic); };
+        window.addEventListener('pointerdown', onceStartMusic, { once: true });
+
+        // Show start overlay, wait for user
+        el.startOverlay.classList.add('show');
+        el.startBtn.addEventListener('click', ()=>{
+          el.startOverlay.classList.remove('show');
+          state.started = true;
+          renderAll();
+          startDay();
+        }, { once: true });
+      }
+
+      window.addEventListener('load', init);
+    </script>
+  </body>
+</html>
+
+
