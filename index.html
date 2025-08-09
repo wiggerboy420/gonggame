@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Gong Line Emoji Trader</title>
     <style>
       :root{
@@ -33,6 +33,7 @@
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        touch-action: manipulation;
       }
       .container {
         max-width: 1200px;
@@ -79,6 +80,7 @@
         font-weight: 700;
         cursor: pointer;
         transition: transform 0.06s ease, background 0.12s ease, border-color 0.12s ease;
+        touch-action: manipulation;
       }
       .station-btn:hover { transform: translateY(-1px); }
       .station-btn.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,255,136,0.2) inset; }
@@ -103,6 +105,7 @@
       .timer-wrap { position: relative; height: 12px; background: rgba(0,255,135,0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(0,255,135,0.25); }
       .timer-bar { position: absolute; top:0; left:0; bottom:0; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
       .timer-text { font-weight: 800; }
+      .timer-wide { margin: 10px 0 4px; }
 
       .market-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
       .mute-toggle { cursor: pointer; border-radius: 999px; background: var(--glass); border: 1px solid rgba(0,255,135,0.25); padding: 8px 12px; font-weight: 700; }
@@ -142,6 +145,7 @@
         color: white; border-radius: 10px; padding: 8px 6px; cursor: pointer;
         font-weight: 800; font-size: 12px; letter-spacing: .2px;
         transition: transform 0.06s ease, filter 0.1s ease, border-color 0.12s ease;
+        touch-action: manipulation;
       }
       .btn:hover { transform: translateY(-1px); }
       .btn.buy { border-color: rgba(0,255,135,0.7); }
@@ -192,18 +196,17 @@
         <div class="subtle">Trade emoji goods between stations before the gong!</div>
         <div style="height:8px"></div>
         <div id="dayLabel" class="subtle" style="font-weight:800">Day 1 / 30</div>
+        <div class="timer-wide">
+          <div class="timer-wrap">
+            <div id="timerBar" class="timer-bar"></div>
+          </div>
+          <div class="timer-text" id="timerText">15s</div>
+        </div>
         <div style="height:8px"></div>
         <div class="stats">
           <div class="stat"><div class="label">Station</div><div id="stationName" class="value">Wollongong</div></div>
           <div class="stat"><div class="label">Cash</div><div id="cashValue" class="value">$0</div></div>
           <div class="stat"><div class="label">Health</div><div id="healthValue" class="value">♥ 100</div></div>
-          <div class="stat">
-            <div class="label">Timer</div>
-            <div class="timer-wrap">
-              <div id="timerBar" class="timer-bar"></div>
-            </div>
-            <div class="timer-text" id="timerText">15s</div>
-          </div>
           <div class="stat"><div class="label">Bag</div><div id="bagValue" class="value">0 / 50</div></div>
         </div>
         <div style="height:10px"></div>
